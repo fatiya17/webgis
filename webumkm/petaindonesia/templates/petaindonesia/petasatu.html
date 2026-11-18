@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="referrer" content="strict-origin-when-cross-origin">
+    <title>Peta Jakarta</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+        integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
+    <style>
+        body {
+            margin: 0;
+            font-family: system-ui, sans-serif;
+        }
+
+        header {
+            padding: 10px 16px;
+            background: #1f4e79;
+            color: #fff;
+        }
+
+        header h1 {
+            margin: 0;
+            font-size: 20px;
+        }
+
+        #map {
+            height: calc(100vh - 44px);
+            width: 100%;
+        }
+
+        /* Hilangkan background default divIcon Leaflet */
+        .custom-map-pin {
+            background: transparent;
+            border: none;
+        }
+    </style>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+        integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+</head>
+
+<body>
+    <header>
+        <h1>Peta Jakarta</h1>
+    </header>
+    <div id="map"></div>
+
+    <script>
+        // Batas wilayah Jakarta: [selatan-barat], [utara-timur] dalam [lat, lon]
+        const batasIndonesia = [[-11.5, 94.5], [6.5, 141.5]];
+
+        // 1. Peta langsung menyesuaikan diri agar seluruh Indonesia terlihat
+        const map = L.map("map", {
+            minZoom: 4,                         // tidak bisa zoom out terlalu jauh
+            maxBounds: [[-15, 88], [10, 148]],  // tidak bisa digeser jauh dari Indonesia
+            maxBoundsViscosity: 0.8
+        }).fitBounds(batasIndonesia);
+
+        // 2. Basemap OpenStreetMap (dengan Referrer Policy agar tidak diblokir OSM)
+        const osm = L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
+            maxZoom: 19,
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+        }).addTo(map);
+
+        // Basemap Citra Satelit Esri
+        const satelit = L.tileLayer(
+            "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
+            { maxZoom: 19, attribution: "Tiles &copy; Esri" }
+        );
+
+        // Basemap Esri Street Map
+        const esriStreet = L.tileLayer(
+            "https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}",
+            { maxZoom: 19, attribution: "Tiles &copy; Esri" }
+        );
+
+        // Icon Pin Peta Klasik Berwarna Biru Muda
+        const iconBiruMuda = L.divIcon({
+            className: "custom-map-pin",
+            html: `
+                <svg width="28" height="42" viewBox="0 0 28 42" fill="none" xmlns="http://www.w3.org/2000/svg" style="filter: drop-shadow(0 2px 3px rgba(0,0,0,0.35));">
+                    <path d="M14 0C6.268 0 0 6.268 0 14C0 24.5 14 42 14 42C14 42 28 24.5 28 14C28 6.268 21.732 0 14 0Z" fill="#38bdf8" stroke="#0284c7" stroke-width="1.5"/>
+                    <circle cx="14" cy="14" r="5" fill="#ffffff"/>
+                </svg>
+            `,
+            iconSize: [28, 42],
+            iconAnchor: [14, 42],
+            popupAnchor: [0, -38]
+        });
+
+        // 3. Contoh marker: ibu kota negara dengan icon pin biru muda
+        const jakarta = L.marker([-6.2088, 106.8456], { icon: iconBiruMuda })
+            .bindPopup("<b>DKI Jakarta</b><br>Ibu kota negara")
+            .addTo(map);
+
+        // 4. Kontrol pilihan basemap dan overlay marker
+        L.control.layers(
+            {
+                "OpenStreetMap": osm,
+                "Citra Satelit (Esri)": satelit,
+                "Esri Street": esriStreet
+            },
+            { "Marker Jakarta": jakarta }
+        ).addTo(map);
+
+        L.control.scale({ imperial: false }).addTo(map);
+
+        // 5. Tampilkan koordinat saat peta diklik (membantu mencari titik)
+        map.on("click", (e) => {
+            L.popup()
+                .setLatLng(e.latlng)
+                .setContent(`Lat: ${e.latlng.lat.toFixed(4)}<br>Lon: ${e.latlng.lng.toFixed(4)}`)
+                .openOn(map);
+        });
+    </script>
+</body>
+
+</html>
