@@ -1,0 +1,536 @@
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="referrer" content="strict-origin-when-cross-origin">
+    <title>15 Gempa Terkini (M 5.0+)</title>
+
+    <!-- leaflet css -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+        integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: Arial, Helvetica, sans-serif;
+            background-color: #f8fafc;
+            color: #1e293b;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        /* header navbar */
+        header {
+            background-color: #1f4e79;
+            color: #ffffff;
+            padding: 10px 18px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-bottom: 2px solid #163857;
+            z-index: 1000;
+        }
+
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        /* burger button */
+        .btn-burger {
+            background-color: transparent;
+            color: #ffffff;
+            border: 1px solid rgba(255, 255, 255, 0.35);
+            border-radius: 4px;
+            padding: 6px 8px;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            transition: background-color 0.15s ease;
+        }
+
+        .btn-burger:hover {
+            background-color: rgba(255, 255, 255, 0.15);
+        }
+
+        .header-title h1 {
+            font-size: 18px;
+            font-weight: 700;
+            margin: 0;
+        }
+
+        .header-title p {
+            font-size: 12px;
+            color: #cbd5e1;
+            margin-top: 2px;
+        }
+
+        .header-actions {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        /* action buttons */
+        .btn-action {
+            background-color: #ffffff;
+            color: #1f4e79;
+            border: 1px solid #cbd5e1;
+            padding: 6px 14px;
+            border-radius: 4px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.15s ease;
+        }
+
+        .btn-action:hover {
+            background-color: #f1f5f9;
+        }
+
+        /* main container */
+        .main-container {
+            flex: 1;
+            display: flex;
+            height: calc(100vh - 58px);
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* sidebar daftar gempa */
+        .sidebar {
+            width: 380px;
+            background-color: #ffffff;
+            border-right: 1px solid #cbd5e1;
+            display: flex;
+            flex-direction: column;
+            overflow-y: auto;
+            z-index: 500;
+            flex-shrink: 0;
+            transition: margin-left 0.25s ease;
+        }
+
+        .sidebar.collapsed {
+            margin-left: -380px;
+        }
+
+        .sidebar-header {
+            padding: 10px 14px;
+            background-color: #f1f5f9;
+            border-bottom: 1px solid #cbd5e1;
+            font-size: 12px;
+            font-weight: 700;
+            color: #475569;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        /* styling item gempa */
+        .gempa-item {
+            padding: 12px 14px;
+            border-bottom: 1px solid #e2e8f0;
+            cursor: pointer;
+            transition: background-color 0.15s ease;
+        }
+
+        .gempa-item:hover {
+            background-color: #f8fafc;
+        }
+
+        .gempa-item.active {
+            background-color: #eff6ff;
+            border-left: 4px solid #1f4e79;
+        }
+
+        .item-top {
+            display: flex;
+            align-items: baseline;
+            gap: 8px;
+            margin-bottom: 4px;
+        }
+
+        /* tag magnitudo */
+        .mag-tag {
+            font-size: 12px;
+            font-weight: 700;
+            color: #ffffff;
+            padding: 2px 7px;
+            border-radius: 4px;
+            white-space: nowrap;
+        }
+
+        .mag-tag.danger {
+            background-color: #dc2626;
+        }
+
+        .mag-tag.warning {
+            background-color: #ea580c;
+        }
+
+        .mag-tag.caution {
+            background-color: #d97706;
+        }
+
+        .wilayah-text {
+            font-size: 13px;
+            font-weight: 700;
+            color: #0f172a;
+            line-height: 1.3;
+        }
+
+        .item-meta {
+            font-size: 12px;
+            color: #475569;
+            margin-bottom: 4px;
+        }
+
+        .item-potensi {
+            font-size: 11.5px;
+            color: #64748b;
+        }
+
+        /* map container */
+        #map {
+            flex: 1;
+            height: 100%;
+            background-color: #e2e8f0;
+        }
+
+        /* heatmap pulse marker */
+        .custom-heat-marker {
+            background: transparent;
+            border: none;
+            cursor: pointer;
+            transition: transform 0.2s ease;
+        }
+
+        .custom-heat-marker:hover {
+            transform: scale(1.25);
+            z-index: 9999 !important;
+        }
+
+        /* legend box */
+        .map-legend {
+            background-color: #ffffff;
+            padding: 10px 14px;
+            border: 1px solid #cbd5e1;
+            border-radius: 4px;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.18);
+            font-size: 12px;
+            line-height: 1.4;
+            color: #1e293b;
+        }
+
+        .map-legend h4 {
+            margin: 0 0 8px 0;
+            font-size: 12.5px;
+            color: #1f4e79;
+            font-weight: 700;
+            border-bottom: 1px solid #e2e8f0;
+            padding-bottom: 4px;
+        }
+
+        .legend-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 5px;
+        }
+
+        .legend-row:last-child {
+            margin-bottom: 0;
+        }
+
+        .legend-color-box {
+            width: 14px;
+            height: 14px;
+            border-radius: 3px;
+            flex-shrink: 0;
+            border: 1px solid rgba(0, 0, 0, 0.15);
+        }
+
+        /* popup styling */
+        .popup-content {
+            font-size: 12.5px;
+            line-height: 1.5;
+            color: #1e293b;
+        }
+
+        .popup-content h4 {
+            font-size: 14px;
+            color: #1f4e79;
+            margin-bottom: 6px;
+            border-bottom: 1px solid #e2e8f0;
+            padding-bottom: 4px;
+        }
+
+        /* responsive mobile */
+        @media (max-width: 768px) {
+            .main-container {
+                flex-direction: column-reverse;
+            }
+
+            .sidebar {
+                width: 100%;
+                height: 45vh;
+                transition: margin-bottom 0.25s ease;
+            }
+
+            .sidebar.collapsed {
+                margin-left: 0;
+                margin-bottom: -45vh;
+            }
+
+            #map {
+                height: 55vh;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <header>
+        <div class="header-left">
+            <button class="btn-burger" id="btn-toggle-sidebar" title="Buka/Tutup Daftar Gempa">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+                    stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="3" y1="12" x2="21" y2="12"></line>
+                    <line x1="3" y1="6" x2="21" y2="6"></line>
+                    <line x1="3" y1="18" x2="21" y2="18"></line>
+                </svg>
+            </button>
+            <div class="header-title">
+                <h1>15 Gempa Terkini (M 5.0+)</h1>
+                <p>15 gempa M 5.0+ terakhir &bull; diperbarui {{ waktu_update }} &bull; Data BMKG: Data Gempabumi Terbuka BMKG</p>
+            </div>
+        </div>
+        <div class="header-actions">
+            <button class="btn-action" id="btn-reload">Muat ulang</button>
+        </div>
+    </header>
+
+    <div class="main-container">
+        <!-- sidebar gempa -->
+        <div class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <span>Daftar Gempa Terbaru</span>
+                <span>{{ total_gempa }} Data</span>
+            </div>
+            <div class="sidebar-list">
+                {% for g in gempa_list %}
+                <div class="gempa-item" id="item-{{ g.nomor }}" data-nomor="{{ g.nomor }}">
+                    <div class="item-top">
+                        <span class="mag-tag {% if g.mag_float >= 7.0 %}danger{% elif g.mag_float >= 6.0 %}warning{% else %}caution{% endif %}">
+                            M {{ g.magnitude }}
+                        </span>
+                        <span class="wilayah-text">{{ g.wilayah }}</span>
+                    </div>
+                    <div class="item-meta">
+                        {{ g.nomor }}. {{ g.tanggal }} {{ g.jam }} &bull; {{ g.kedalaman }}
+                    </div>
+                    <div class="item-potensi">
+                        {{ g.potensi }} &bull; ({{ g.lintang }}, {{ g.bujur }})
+                    </div>
+                </div>
+                {% empty %}
+                <div style="padding: 20px; text-align: center; color: #64748b;">
+                    Tidak ada data gempa yang ditemukan.
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <div id="map"></div>
+    </div>
+
+    <!-- data json gempa -->
+    <script id="gempa-data" type="application/json">{{ gempa_json|safe }}</script>
+
+    <!-- leaflet js -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+        integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+
+    <script>
+        // parse data json gempa
+        const rawJsonElement = document.getElementById("gempa-data");
+        const dataGempa = rawJsonElement ? JSON.parse(rawJsonElement.textContent) : [];
+
+        // reload page
+        const btnReload = document.getElementById("btn-reload");
+        if (btnReload) {
+            btnReload.addEventListener("click", () => window.location.reload());
+        }
+
+        // toggle sidebar burger
+        const sidebar = document.getElementById("sidebar");
+        const btnToggleSidebar = document.getElementById("btn-toggle-sidebar");
+
+        function toggleSidebar() {
+            sidebar.classList.toggle("collapsed");
+            setTimeout(() => {
+                map.invalidateSize();
+            }, 260);
+        }
+
+        if (btnToggleSidebar) {
+            btnToggleSidebar.addEventListener("click", toggleSidebar);
+        }
+
+        // batas wilayah & init map
+        const batasIndonesia = [[-11.5, 94.5], [6.5, 141.5]];
+
+        const map = L.map("map", {
+            minZoom: 4,
+            maxBounds: [[-18, 88], [16, 148]],
+            maxBoundsViscosity: 0.4
+        }).fitBounds(batasIndonesia);
+
+        // basemap osm & esri
+        const osm = L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
+            maxZoom: 19,
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors | Data BMKG: <a href="https://data.bmkg.go.id/gempabumi/" target="_blank">Data Gempabumi Terbuka BMKG</a>'
+        }).addTo(map);
+
+        const satelit = L.tileLayer(
+            "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
+            { maxZoom: 19, attribution: "Tiles &copy; Esri | Data BMKG: Data Gempabumi Terbuka BMKG" }
+        );
+
+        // layer control & scale
+        L.control.layers({
+            "OpenStreetMap": osm,
+            "Citra Satelit": satelit
+        }).addTo(map);
+
+        L.control.scale({ imperial: false }).addTo(map);
+
+        // legend magnitudo gempa
+        const legend = L.control({ position: "bottomright" });
+        legend.onAdd = function (map) {
+            const div = L.DomUtil.create("div", "map-legend");
+            div.innerHTML = `
+                <h4>Kekuatan Gempa</h4>
+                <div class="legend-row">
+                    <span class="legend-color-box" style="background-color: #dc2626;"></span>
+                    <span>M &ge; 7.0 (Sangat Kuat)</span>
+                </div>
+                <div class="legend-row">
+                    <span class="legend-color-box" style="background-color: #ea580c;"></span>
+                    <span>M 6.0 - 6.9 (Kuat)</span>
+                </div>
+                <div class="legend-row">
+                    <span class="legend-color-box" style="background-color: #d97706;"></span>
+                    <span>M 5.0 - 5.9 (Sedang)</span>
+                </div>
+                <div style="margin-top: 8px; padding-top: 6px; border-top: 1px solid #e2e8f0; font-size: 10.5px; color: #64748b;">
+                    Data BMKG: <strong>Data Gempabumi Terbuka BMKG</strong>
+                </div>
+            `;
+            return div;
+        };
+        legend.addTo(map);
+
+        // render marker heatmap seismik
+        const markers = {};
+        const bounds = [];
+
+        dataGempa.forEach(g => {
+            if (g.lat && g.lon) {
+                bounds.push([g.lat, g.lon]);
+
+                const size = Math.round(g.mag_float * 6.5);
+                const half = size / 2;
+                const innerR = Math.max(5, Math.round(size * 0.16));
+                const midR = Math.round(size * 0.32);
+                const outerR = Math.round(size * 0.48);
+
+                const iconMarker = L.divIcon({
+                    className: "custom-heat-marker",
+                    html: `
+                        <svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}" style="overflow: visible;">
+                            <circle cx="${half}" cy="${half}" r="${outerR}" fill="${g.color}" fill-opacity="0.22" />
+                            <circle cx="${half}" cy="${half}" r="${midR}" fill="${g.color}" fill-opacity="0.48" />
+                            <circle cx="${half}" cy="${half}" r="${innerR}" fill="${g.color}" fill-opacity="0.95" stroke="#ffffff" stroke-width="1.5" />
+                        </svg>
+                    `,
+                    iconSize: [size, size],
+                    iconAnchor: [half, half],
+                    popupAnchor: [0, -half]
+                });
+
+                const marker = L.marker([g.lat, g.lon], { icon: iconMarker }).addTo(map);
+
+                const popupHtml = `
+                    <div class="popup-content">
+                        <h4>Gempa Magnitudo ${g.magnitude}</h4>
+                        <b>Wilayah:</b> ${g.wilayah}<br>
+                        <b>Waktu:</b> ${g.tanggal} ${g.jam}<br>
+                        <b>Kedalaman:</b> ${g.kedalaman}<br>
+                        <b>Koordinat:</b> ${g.lintang}, ${g.bujur}<br>
+                        <b>Potensi:</b> ${g.potensi}
+                    </div>
+                `;
+
+                marker.bindPopup(popupHtml, {
+                    autoPan: true,
+                    autoPanPaddingTopLeft: [40, 100],
+                    autoPanPaddingBottomRight: [40, 40]
+                });
+                markers[g.nomor] = marker;
+
+                marker.on("click", () => {
+                    focusGempa(g.nomor);
+                });
+            }
+        });
+
+        // fit bounds awal
+        if (bounds.length > 0) {
+            map.fitBounds(bounds, { padding: [40, 40] });
+        }
+
+        // focus & zoom ke gempa
+        function focusGempa(nomor) {
+            selectItem(nomor);
+            const marker = markers[nomor];
+            if (marker) {
+                const latlng = marker.getLatLng();
+                const targetLat = latlng.lat + 0.35;
+                map.flyTo([targetLat, latlng.lng], 8.5, { duration: 1.2 });
+                marker.openPopup();
+            }
+        }
+
+        // click event sidebar item
+        document.querySelectorAll(".gempa-item").forEach(item => {
+            item.addEventListener("click", () => {
+                const nomor = parseInt(item.getAttribute("data-nomor"), 10);
+                focusGempa(nomor);
+            });
+        });
+
+        // highlight item aktif
+        function selectItem(nomor) {
+            document.querySelectorAll(".gempa-item").forEach(el => el.classList.remove("active"));
+            const currentItem = document.getElementById(`item-${nomor}`);
+            if (currentItem) {
+                currentItem.classList.add("active");
+                currentItem.scrollIntoView({ behavior: "smooth", block: "nearest" });
+            }
+        }
+    </script>
+</body>
+
+</html>
