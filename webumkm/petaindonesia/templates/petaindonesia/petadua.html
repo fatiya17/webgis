@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="referrer" content="strict-origin-when-cross-origin">
+    <title>Peta Jabodetabek</title>
+    <!-- leaflet css -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+        integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
+    <style>
+        body {
+            margin: 0;
+            font-family: system-ui, sans-serif;
+        }
+
+        header {
+            padding: 10px 16px;
+            background: #1f4e79;
+            color: #fff;
+        }
+
+        header h1 {
+            margin: 0;
+            font-size: 20px;
+        }
+
+        #map {
+            height: calc(100vh - 44px);
+            width: 100%;
+        }
+
+        /* reset custom divicon */
+        .custom-map-pin {
+            background: transparent;
+            border: none;
+        }
+
+        /* popup styling */
+        .popup-info {
+            font-size: 13px;
+            line-height: 1.5;
+            color: #1e293b;
+        }
+
+        .popup-info h4 {
+            margin: 0 0 6px 0;
+            font-size: 15px;
+            color: #1f4e79;
+            border-bottom: 2px solid #38bdf8;
+            padding-bottom: 4px;
+        }
+    </style>
+    <!-- leaflet js -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+        integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+</head>
+
+<body>
+    <header>
+        <h1>Peta Jabodetabek</h1>
+    </header>
+    <div id="map"></div>
+
+    <script>
+        // data geojson jabodetabek
+        const dataJabodetabek = {
+            "type": "FeatureCollection",
+            "features": [
+                {
+                    "type": "Feature",
+                    "properties": {
+                        "nama": "Jakarta",
+                        "luas": "664,01",
+                        "populasi": "11.038.216 ",
+                        "tahun ": 2024,
+                        "marker-color": "rgba(167, 163, 228, 1)",
+                        "marker-size": "medium"
+                    },
+                    "geometry": {
+                        "type": "Point",
+                        "coordinates": [106.824427, -6.174567]
+                    }
+                },
+                {
+                    "type": "Feature",
+                    "properties": {
+                        "nama": "Tangerang",
+                        "luas": "164,55",
+                        "marker-color": "rgba(82, 208, 194, 1)",
+                        "marker-size": "medium",
+                        "populasi": "1.965.000",
+                        "tahun ": 2024
+                    },
+                    "geometry": {
+                        "type": "Point",
+                        "coordinates": [106.636964, -6.176385]
+                    }
+                },
+                {
+                    "type": "Feature",
+                    "properties": {
+                        "nama": "Tangerang Selatan",
+                        "luas": "147,19 ",
+                        "marker-color": "rgba(234, 146, 203, 1)",
+                        "marker-size": "medium",
+                        "populasi": "1.429.529",
+                        "tahun ": 2024
+                    },
+                    "geometry": {
+                        "type": "Point",
+                        "coordinates": [106.707885, -6.322798]
+                    }
+                },
+                {
+                    "type": "Feature",
+                    "properties": {
+                        "nama": "Bogor",
+                        "luas": "111,39",
+                        "populasi": "1.144.108",
+                        "tahun ": 2024,
+                        "marker-color": "rgba(208, 191, 38, 1)",
+                        "marker-size": "medium"
+                    },
+                    "geometry": {
+                        "type": "Point",
+                        "coordinates": [106.797292, -6.596306]
+                    }
+                },
+                {
+                    "type": "Feature",
+                    "properties": {
+                        "nama": "Depok",
+                        "luas": "200,29",
+                        "tahun ": 2024,
+                        "populasi": "2.010.912",
+                        "marker-color": "rgba(41, 222, 250, 1)",
+                        "marker-size": "medium"
+                    },
+                    "geometry": {
+                        "type": "Point",
+                        "coordinates": [106.814052, -6.406913]
+                    }
+                },
+                {
+                    "type": "Feature",
+                    "properties": {
+                        "nama": "Bekasi",
+                        "populasi": "2.644.058",
+                        "luas": "213,12",
+                        "tahun ": 2024,
+                        "marker-color": "rgba(239, 116, 182, 1)",
+                        "marker-size": "medium"
+                    },
+                    "geometry": {
+                        "type": "Point",
+                        "coordinates": [106.993442, -6.234822]
+                    }
+                }
+            ]
+        };
+
+        // batas wilayah jabodetabek
+        const batasJabodetabek = [[-6.65, 106.60], [-6.10, 107.05]];
+
+        // init map & fit bounds
+        const map = L.map("map", {
+            minZoom: 8,
+            maxBounds: [[-7.5, 105.8], [-5.5, 107.8]],
+            maxBoundsViscosity: 0.8
+        }).fitBounds(batasJabodetabek);
+
+        // basemap osm & esri
+        const osm = L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
+            maxZoom: 19,
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+        }).addTo(map);
+
+        const satelit = L.tileLayer(
+            "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
+            { maxZoom: 19, attribution: "Tiles &copy; Esri" }
+        );
+
+        const esriStreet = L.tileLayer(
+            "https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}",
+            { maxZoom: 19, attribution: "Tiles &copy; Esri" }
+        );
+
+        // icon pin biru muda
+        const iconBiruMuda = L.divIcon({
+            className: "custom-map-pin",
+            html: `
+                <svg width="28" height="42" viewBox="0 0 28 42" fill="none" xmlns="http://www.w3.org/2000/svg" style="filter: drop-shadow(0 2px 3px rgba(0,0,0,0.35));">
+                    <path d="M14 0C6.268 0 0 6.268 0 14C0 24.5 14 42 14 42C14 42 28 24.5 28 14C28 6.268 21.732 0 14 0Z" fill="#38bdf8" stroke="#0284c7" stroke-width="1.5"/>
+                    <circle cx="14" cy="14" r="5" fill="#ffffff"/>
+                </svg>
+            `,
+            iconSize: [28, 42],
+            iconAnchor: [14, 42],
+            popupAnchor: [0, -38]
+        });
+
+        // render marker dari geojson
+        const overlayMarkers = {};
+        dataJabodetabek.features.forEach((feature) => {
+            const p = feature.properties;
+            const nama = p.nama;
+            const luas = p.luas;
+            const populasi = p.populasi.trim();
+            const tahun = p["tahun "] || p.tahun || 2024;
+            const lon = feature.geometry.coordinates[0];
+            const lat = feature.geometry.coordinates[1];
+
+            const marker = L.marker([lat, lon], { icon: iconBiruMuda })
+                .bindPopup(`
+                    <div class="popup-info">
+                        <h4>${nama}</h4>
+                        <b>Luas Wilayah:</b> ${luas} km²<br>
+                        <b>Populasi:</b> ${populasi} jiwa<br>
+                        <b>Tahun Data:</b> ${tahun}
+                    </div>
+                `)
+                .bindTooltip(nama, {
+                    direction: "top",
+                    offset: [0, -38]
+                })
+                .addTo(map);
+
+            overlayMarkers[`Marker ${nama}`] = marker;
+        });
+
+        // layer control & scale
+        L.control.layers(
+            {
+                "OpenStreetMap": osm,
+                "Citra Satelit (Esri)": satelit,
+                "Esri Street": esriStreet
+            },
+            overlayMarkers
+        ).addTo(map);
+
+        L.control.scale({ imperial: false }).addTo(map);
+
+        // click event popup koordinat
+        map.on("click", (e) => {
+            L.popup()
+                .setLatLng(e.latlng)
+                .setContent(`Lat: ${e.latlng.lat.toFixed(4)}<br>Lon: ${e.latlng.lng.toFixed(4)}`)
+                .openOn(map);
+        });
+    </script>
+</body>
+
+</html>
