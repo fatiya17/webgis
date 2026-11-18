@@ -1,0 +1,18 @@
+# virtual environments
+webgis/
+venv/
+.venv/
+env/
+
+# python cache
+__pycache__/
+*.py[cod]
+*$py.class
+
+# django sqlite database
+*.sqlite3
+
+# environment variables & ide
+.env
+.vscode/
+.idea/
