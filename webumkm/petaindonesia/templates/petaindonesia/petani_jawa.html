@@ -1,0 +1,595 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Peta Sebaran Petani dan Lahan Pertanian Pulau Jawa</title>
+
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+        integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: #f5f5f7;
+            color: #1d1d1f;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        /* Header Navbar Minimalis Flat */
+        #navbar {
+            background: #ffffff;
+            border-bottom: 1px solid #e5e5e7;
+            height: 60px;
+            padding: 0 24px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: relative;
+            z-index: 1000;
+        }
+
+        .header-title h2 {
+            font-size: 16px;
+            font-weight: 600;
+            letter-spacing: -0.015em;
+            color: #1d1d1f;
+        }
+
+        .header-title small {
+            font-size: 11.5px;
+            color: #86868b;
+            display: block;
+            margin-top: 2px;
+        }
+
+        .control-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .control-label {
+            font-size: 12.5px;
+            font-weight: 500;
+            color: #86868b;
+        }
+
+        /* Pill Dropdown Bergaya Flat */
+        .select-pill {
+            padding: 7px 16px;
+            font-family: inherit;
+            font-size: 13px;
+            font-weight: 500;
+            color: #1d1d1f;
+            background: #f5f5f7;
+            border: 1px solid #d2d2d7;
+            border-radius: 980px;
+            outline: none;
+            cursor: pointer;
+            transition: background 0.15s ease;
+        }
+
+        .select-pill:hover {
+            background: #e8e8ed;
+        }
+
+        .select-pill:focus {
+            background: #ffffff;
+            border-color: #0071e3;
+        }
+
+        /* Wadah Peta */
+        #map {
+            height: calc(100vh - 60px);
+            width: 100%;
+        }
+
+        /* Hilangkan box focus outline saat poligon diklik */
+        path:focus,
+        path.leaflet-interactive:focus,
+        svg:focus,
+        .leaflet-container:focus {
+            outline: none !important;
+        }
+
+        /* Panel Info Kanan Atas (Solid Flat, Tanpa Shadow & Gradiasi) */
+        .info-panel {
+            width: 310px;
+            padding: 16px 18px;
+            background: #ffffff;
+            border: 1px solid #d2d2d7;
+            border-radius: 14px;
+            line-height: 1.5;
+        }
+
+        /* Badge Wilayah - Warna Solid Menyesuaikan Poligon */
+        .badge-wilayah {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 980px;
+            font-size: 11px;
+            font-weight: 600;
+            color: #ffffff;
+            margin-bottom: 8px;
+        }
+
+        .nama-provinsi {
+            font-size: 18px;
+            font-weight: 700;
+            letter-spacing: -0.02em;
+            color: #1d1d1f;
+            margin-bottom: 2px;
+        }
+
+        .tahun-sub {
+            font-size: 11.5px;
+            color: #86868b;
+            margin-bottom: 12px;
+        }
+
+        /* Kotak Highlight Metrik yang Warnanya Selaras (Solid) */
+        .highlight-box {
+            padding: 10px 12px;
+            border-radius: 10px;
+            margin-bottom: 12px;
+            border: 1.5px solid transparent;
+        }
+
+        .highlight-label {
+            font-size: 10.5px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.03em;
+            margin-bottom: 2px;
+        }
+
+        .highlight-val {
+            font-size: 20px;
+            font-weight: 700;
+            letter-spacing: -0.02em;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+        }
+
+        .stat-card {
+            padding: 8px 10px;
+            background: #f5f5f7;
+            border: 1px solid #e5e5e7;
+            border-radius: 8px;
+        }
+
+        .stat-card-label {
+            font-size: 10.5px;
+            color: #86868b;
+            margin-bottom: 2px;
+        }
+
+        .stat-card-val {
+            font-size: 13px;
+            font-weight: 600;
+            color: #1d1d1f;
+        }
+
+        .empty-info {
+            text-align: center;
+            padding: 20px 8px;
+            color: #86868b;
+            font-size: 13px;
+        }
+
+        .empty-info b {
+            color: #1d1d1f;
+            display: block;
+            margin-bottom: 4px;
+            font-size: 14px;
+        }
+
+        /* Panel Legenda Kanan Bawah (Solid Flat) */
+        .legend {
+            background: #ffffff;
+            border: 1px solid #d2d2d7;
+            border-radius: 12px;
+            padding: 12px 14px;
+            min-width: 200px;
+        }
+
+        .legend-title {
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.03em;
+            color: #86868b;
+            margin-bottom: 8px;
+        }
+
+        .legend-row {
+            display: flex;
+            align-items: center;
+            margin-bottom: 5px;
+            font-size: 11.5px;
+            color: #1d1d1f;
+            font-weight: 500;
+        }
+
+        .legend-color {
+            width: 14px;
+            height: 14px;
+            border-radius: 3px;
+            margin-right: 8px;
+            border: 1px solid rgba(0, 0, 0, 0.1);
+        }
+
+        /* Hilangkan shadow pada control bawaan Leaflet */
+        .leaflet-bar {
+            box-shadow: none !important;
+            border: 1px solid #d2d2d7 !important;
+            border-radius: 8px !important;
+            overflow: hidden;
+        }
+
+        .leaflet-bar a {
+            border-bottom: 1px solid #e5e5e7 !important;
+        }
+    </style>
+
+    <!-- Leaflet JS -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+        integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+</head>
+
+<body>
+
+    <!-- Header Navbar -->
+    <div id="navbar">
+        <div class="header-title">
+            <h2>Peta Sebaran Petani dan Lahan Pertanian di Pulau Jawa Tahun 2024</h2>
+            <small>Sumber Data: Sensus Pertanian BPS (ST2023)</small>
+        </div>
+        <div class="control-group">
+            <span class="control-label">Warna menurut:</span>
+            <select id="pilihan-data" class="select-pill" onchange="gantiVariabel()">
+                <option value="kepadatan">Kepadatan Penduduk (jiwa/km²)</option>
+                <option value="petani">Jumlah Petani (unit, ST2023)</option>
+                <option value="lahan">Luas Panen Padi (ha)</option>
+                <option value="populasi">Populasi Penduduk (jiwa)</option>
+            </select>
+        </div>
+    </div>
+
+    <!-- Peta -->
+    <div id="map"></div>
+
+    <script>
+        // 1. Inisialisasi Peta Leaflet di Pulau Jawa
+        const map = L.map('map').setView([-7.3, 110.1], 7);
+
+        // Basemap OpenStreetMap Resmi
+        L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            maxZoom: 18,
+            attribution: '&copy; OpenStreetMap'
+        }).addTo(map);
+
+        const URL_PROFIL = "{% static 'json/profil_petani_jawa.json' %}";
+        const URL_FOLDER_JAWA = "{% static 'json/jawa/' %}";
+
+        const daftarKode = ["31", "32", "33", "34", "35", "36"];
+        const dataStatistik = {};
+        const geojsonLayers = [];
+        let variabelAktif = "kepadatan";
+        let kodeAktif = null;
+
+        // Fungsi parsing angka dari format teks BPS
+        function bersihkanAngka(val) {
+            if (val === undefined || val === null || val === "") return 0;
+            if (typeof val === 'number') {
+                if (val > 0 && val < 1000 && !Number.isInteger(val)) {
+                    return Math.round(val * 1000);
+                }
+                return val;
+            }
+            let s = val.toString().trim();
+            if (s.includes('.') && s.includes(',')) {
+                s = s.replace(/\./g, '').replace(',', '.');
+            } else if (s.includes(',')) {
+                s = s.replace(',', '.');
+            } else if ((s.match(/\./g) || []).length > 1) {
+                s = s.replace(/\./g, '');
+            } else if (s.includes('.')) {
+                let parts = s.split('.');
+                if (parts[1] && parts[1].length === 3) {
+                    s = s.replace('.', '');
+                }
+            }
+            return parseFloat(s) || 0;
+        }
+
+        // Skala Pewarnaan Gradasi Choropleth
+        function getColor(nilai, variabel) {
+            if (variabel === "kepadatan") {
+                return nilai > 5500 ? '#800026' :
+                    nilai > 3500 ? '#bd0026' :
+                        nilai > 1500 ? '#e31a1c' :
+                            nilai > 1000 ? '#fd8d3c' :
+                                nilai > 500 ? '#fed976' : '#ffffb2';
+            } else if (variabel === "petani") {
+                return nilai > 4500000 ? '#005a32' :
+                    nilai > 3400000 ? '#238b45' :
+                        nilai > 2100000 ? '#41ab5d' :
+                            nilai > 500000 ? '#74c476' :
+                                nilai > 15000 ? '#a1d99b' : '#edf8e9';
+            } else if (variabel === "lahan") {
+                return nilai > 1500000 ? '#084594' :
+                    nilai > 1000000 ? '#2171b5' :
+                        nilai > 250000 ? '#4292c6' :
+                            nilai > 90000 ? '#6baed6' :
+                                nilai > 500 ? '#bdd7e7' : '#eff3ff';
+            } else { // populasi
+                return nilai > 45000000 ? '#4a1486' :
+                    nilai > 35000000 ? '#6a51a3' :
+                        nilai > 12000000 ? '#807dba' :
+                            nilai > 5000000 ? '#9e9ac8' : '#dadaeb';
+            }
+        }
+
+        function getLabelVariabel(v) {
+            if (v === "kepadatan") return "Kepadatan Penduduk";
+            if (v === "petani") return "Jumlah Petani";
+            if (v === "lahan") return "Luas Panen Padi";
+            return "Populasi Penduduk";
+        }
+
+        function getSatuanVariabel(v) {
+            if (v === "kepadatan") return "jiwa/km²";
+            if (v === "petani") return "unit (ST2023)";
+            if (v === "lahan") return "hektare";
+            return "jiwa";
+        }
+
+        // Panel Info Kanan Atas
+        const info = L.control({ position: 'topright' });
+        info.onAdd = function () {
+            this._div = L.DomUtil.create('div', 'info-panel');
+            this.update();
+            return this._div;
+        };
+
+        info.update = function (kode) {
+            if (kode && dataStatistik[kode]) {
+                const d = dataStatistik[kode];
+                const warnaWilayah = getColor(d[variabelAktif], variabelAktif);
+                const nilaiHero = d[variabelAktif];
+
+                this._div.innerHTML = `
+                    <!-- Badge dengan warna persis seperti label poligon peta -->
+                    <div class="badge-wilayah" style="background-color: ${warnaWilayah};">
+                        Kode ${d.kode}
+                    </div>
+                    <div class="nama-provinsi">${d.nama}</div>
+                    <div class="tahun-sub">Tahun Data: ${d.tahun}</div>
+
+                    <!-- Kotak Highlight Metrik dengan aksen garis warna selaras (Flat Solid) -->
+                    <div class="highlight-box" style="background: #f5f5f7; border-left: 4px solid ${warnaWilayah}; border-radius: 6px;">
+                        <div class="highlight-label" style="color: #86868b;">${getLabelVariabel(variabelAktif)}</div>
+                        <div class="highlight-val" style="color: #1d1d1f;">
+                            ${Math.round(nilaiHero).toLocaleString('id-ID')} <span style="font-size: 13px; font-weight: 500; color: #86868b;">${getSatuanVariabel(variabelAktif)}</span>
+                        </div>
+                    </div>
+
+                    <div class="stats-grid">
+                        <div class="stat-card">
+                            <div class="stat-card-label">Populasi</div>
+                            <div class="stat-card-val">${d.populasi.toLocaleString('id-ID')}</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-card-label">Luas Wilayah</div>
+                            <div class="stat-card-val">${d.luas_wilayah.toLocaleString('id-ID')} km²</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-card-label">Petani (ST23)</div>
+                            <div class="stat-card-val">${d.petani.toLocaleString('id-ID')}</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-card-label">Luas Panen</div>
+                            <div class="stat-card-val">${d.lahan.toLocaleString('id-ID')} ha</div>
+                        </div>
+                    </div>
+                `;
+            } else {
+                this._div.innerHTML = `
+                    <div class="empty-info">
+                        <b>Informasi Wilayah</b>
+                        Arahkan kursor atau sentuh salah satu provinsi untuk melihat detail statistik
+                    </div>
+                `;
+            }
+        };
+        info.addTo(map);
+
+        // Panel Legenda Kanan Bawah
+        const legend = L.control({ position: 'bottomright' });
+        legend.onAdd = function () {
+            this._div = L.DomUtil.create('div', 'legend');
+            this.update();
+            return this._div;
+        };
+
+        legend.update = function () {
+            const div = this._div;
+            const judul = document.getElementById("pilihan-data").selectedOptions[0].text;
+            div.innerHTML = `<div class="legend-title">${judul}</div>`;
+
+            let grades;
+            if (variabelAktif === "kepadatan") {
+                grades = [0, 500, 1000, 1500, 3500, 5500];
+            } else if (variabelAktif === "petani") {
+                grades = [0, 15000, 500000, 2100000, 3400000, 4500000];
+            } else if (variabelAktif === "lahan") {
+                grades = [0, 500, 90000, 250000, 1000000, 1500000];
+            } else {
+                grades = [0, 5000000, 12000000, 35000000, 45000000];
+            }
+
+            for (let i = 0; i < grades.length; i++) {
+                const from = grades[i];
+                const to = grades[i + 1];
+                const color = getColor(from + 1, variabelAktif);
+                div.innerHTML += `
+                    <div class="legend-row">
+                        <span class="legend-color" style="background: ${color};"></span>
+                        <span>${from.toLocaleString('id-ID')}${to ? ' &ndash; ' + to.toLocaleString('id-ID') : '+'}</span>
+                    </div>
+                `;
+            }
+        };
+        legend.addTo(map);
+
+        // Muat Data Statistik JSON
+        fetch(URL_PROFIL)
+            .then(res => {
+                if (!res.ok) throw new Error("Gagal mengambil " + URL_PROFIL);
+                return res.json();
+            })
+            .then(data => {
+                data.forEach(item => {
+                    const kode = String(item["Kode"] || "").trim();
+                    if (!kode) return;
+
+                    const luas = bersihkanAngka(item["Luas Wilayah (km²)"]);
+                    const populasi = bersihkanAngka(item["Populasi (jiwa)"]);
+                    const petani = bersihkanAngka(item["Jumlah Petani (unit, ST2023)"]);
+                    const lahan = bersihkanAngka(item["Luas Panen Padi (ha)"]);
+                    const kepadatan = luas > 0 ? (populasi / luas) : 0;
+
+                    dataStatistik[kode] = {
+                        kode: kode,
+                        nama: item["Nama Provinsi"],
+                        tahun: item["Tahun"] || 2024,
+                        luas_wilayah: luas,
+                        populasi: populasi,
+                        petani: petani,
+                        lahan: lahan,
+                        kepadatan: kepadatan
+                    };
+                });
+
+                muatPoligonJawa();
+            })
+            .catch(err => {
+                console.error(err);
+                alert("Gagal membaca profil_petani_jawa.json: " + err.message);
+            });
+
+        // Muat Poligon 6 Provinsi dari folder static/json/jawa/
+        function muatPoligonJawa() {
+            daftarKode.forEach(kode => {
+                fetch(`${URL_FOLDER_JAWA}${kode}.geojson`)
+                    .then(res => {
+                        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+                        return res.json();
+                    })
+                    .then(geoData => {
+                        const d = dataStatistik[kode] || {};
+                        const nilaiAwal = d[variabelAktif] || 0;
+                        const warna = getColor(nilaiAwal, variabelAktif);
+
+                        const layer = L.geoJSON(geoData, {
+                            style: function () {
+                                return {
+                                    fillColor: warna,
+                                    weight: 1.5,
+                                    opacity: 1,
+                                    color: '#ffffff',
+                                    fillOpacity: 0.78
+                                };
+                            },
+                            onEachFeature: function (feature, l) {
+                                l.on({
+                                    mouseover: function (e) {
+                                        const target = e.target;
+                                        target.setStyle({
+                                            weight: 3,
+                                            color: '#1d1d1f',
+                                            fillOpacity: 0.95
+                                        });
+                                        target.bringToFront();
+                                        info.update(kode);
+                                    },
+                                    mouseout: function (e) {
+                                        if (kodeAktif !== kode) {
+                                            targetReset(e.target, kode);
+                                            info.update(kodeAktif);
+                                        }
+                                    },
+                                    click: function (e) {
+                                        kodeAktif = kode;
+                                        geojsonLayers.forEach(item => {
+                                            if (item.kode !== kode) {
+                                                targetReset(item.layer, item.kode);
+                                            }
+                                        });
+                                        e.target.setStyle({
+                                            weight: 3,
+                                            color: '#1d1d1f',
+                                            fillOpacity: 0.95
+                                        });
+                                        e.target.bringToFront();
+                                        info.update(kode);
+                                    }
+                                });
+                            }
+                        }).addTo(map);
+
+                        geojsonLayers.push({ layer: layer, kode: kode });
+                    })
+                    .catch(err => console.warn(`Gagal memuat ${kode}.geojson:`, err));
+            });
+        }
+
+        function targetReset(targetLayer, kode) {
+            const d = dataStatistik[kode] || {};
+            const nilai = d[variabelAktif] || 0;
+            targetLayer.setStyle({
+                fillColor: getColor(nilai, variabelAktif),
+                weight: 1.5,
+                color: '#ffffff',
+                fillOpacity: 0.78
+            });
+        }
+
+        // Ganti Variabel dari Dropdown
+        function gantiVariabel() {
+            variabelAktif = document.getElementById("pilihan-data").value;
+            legend.update();
+
+            geojsonLayers.forEach(item => {
+                const d = dataStatistik[item.kode] || {};
+                const nilai = d[variabelAktif] || 0;
+                item.layer.setStyle({
+                    fillColor: getColor(nilai, variabelAktif)
+                });
+            });
+
+            if (kodeAktif) {
+                info.update(kodeAktif);
+            }
+        }
+    </script>
+</body>
+
+</html>
