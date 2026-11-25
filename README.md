@@ -1,55 +1,64 @@
-# Praktikum WebGIS
+# Kumpulan Praktikum WebGIS
 
-Repository ini berisi kumpulan modul dan proyek Praktikum WebGIS berbasis Python & Django.
-
-## Struktur Direktori
-- `webumkm/` : Proyek WebGIS UMKM & Pemantauan Gempa Bumi BMKG (Leaflet.js + Django)
-<!-- Praktikum berikutnya bisa ditambahkan di folder terpisah di dalam repository ini -->
+Repositori ini berisi kumpulan tugas dan modul **Praktikum Sistem Informasi Geografis berbasis Web (WebGIS)** yang dikembangkan menggunakan **Python**, framework **Django**, dan pustaka pemetaan **Leaflet.js**.
 
 ---
 
-## Cara Menjalankan Proyek `webumkm`
+## Isi Proyek Ini
 
-Bagi yang mendownload atau clone repository ini:
+Semua kode utama proyek berada di dalam folder **`webumkm/`**, yang terbagi menjadi dua modul utama:
 
-### 1. Masuk ke Folder Proyek
-```bash
-cd webumkm
-```
+1. **`petaindonesia/`** : Modul visualisasi geospasial wilayah Indonesia:
+   * **Peta Tematik Petani Jawa (`/petaindonesia/petani_jawa/`)** — Peta tematik data Sensus Pertanian BPS (ST2023) untuk 6 provinsi di Pulau Jawa. Warnanya otomatis berubah sesuai indikator yang dipilih (kepadatan, jumlah petani, luas panen, populasi).
+   * **Peta 34 Provinsi Indonesia (`/petaindonesia/provinsi/`)** — Menampilkan batas poligon seluruh provinsi di Indonesia dengan fitur *auto-center* (wilayah langsung bergeser ke tengah saat diklik dari daftar) dan pencarian instan.
+   * **Latihan Objek Leaflet (`/petakampus/`)** — Pengenalan objek dasar Leaflet: Marker titik, Lingkaran (*Circle*), Poligon bidang, dan Popup.
+   * **Peta Jabodetabek (`/petadua/`)** & **Peta Dasar (`/petasatu/`)**.
 
-### 2. Buat & Aktifkan Virtual Environment
-- **Windows:**
-  ```bash
-  python -m venv venv
-  venv\Scripts\activate
-  ```
-- **macOS / Linux:**
-  ```bash
-  python3 -m venv venv
-  source venv/bin/activate
-  ```
-
-### 3. Install Dependensi
-```bash
-pip install -r requirements.txt
-```
-
-### 4. Jalankan Migrasi Database
-```bash
-python manage.py migrate
-```
-
-### 5. Jalankan Server
-```bash
-python manage.py runserver
-```
-
-Buka browser di: `http://127.0.0.1:8000/`
+2. **`gempabumi/`** : Modul pemantauan bencana gempa bumi yang mengambil data langsung secara otomatis dari API BMKG untuk gempa berkekuatan magnitudo 5.0 ke atas.
 
 ---
 
-## Halaman yang Tersedia di `webumkm`
-- `/` atau `/welcome/` : Halaman Beranda
-- `/petasatu/` : Peta Leaflet Indonesia
-- `/petadua/` : Peta Wilayah Jabodetabek (GeoJSON Layer)
-- `/gempabumi/` : Peta Sebaran Gempa Bumi BMKG (Real-time M 5.0+)
+## Cara Menjalankan Aplikasi
+
+1. **Masuk ke folder `webumkm` di terminal:**
+   ```bash
+   cd webumkm
+   ```
+
+2. **Buat dan aktifkan virtual environment:**
+   * **Windows:**
+     ```bash
+     python -m venv venv
+     venv\Scripts\activate
+     ```
+   * **Mac / Linux:**
+     ```bash
+     python3 -m venv venv
+     source venv/bin/activate
+     ```
+
+3. **Install dependensi:**
+   ```bash
+   pip install -r requirements.txt
+   ```
+
+4. **Jalankan server Django:**
+   ```bash
+   python manage.py runserver
+   ```
+
+5. Buka browser di: **`http://127.0.0.1:8000/`**
+
+---
+
+## Ringkasan Link Halaman
+
+| URL Halaman | Nama Fitur | Keterangan Singkat |
+|---|---|---|
+| `http://127.0.0.1:8000/` | Beranda WebGIS | Halaman pembuka aplikasi |
+| `http://127.0.0.1:8000/petaindonesia/petani_jawa/` | Peta Petani Jawa | Peta tematik data BPS Sensus Pertanian 2023 |
+| `http://127.0.0.1:8000/petaindonesia/provinsi/` | Peta Provinsi | Batas wilayah 34 provinsi + auto-center |
+| `http://127.0.0.1:8000/petakampus/` | Objek Leaflet | Latihan marker, circle, polygon, popup |
+| `http://127.0.0.1:8000/gempabumi/` | Gempa Bumi BMKG | Pantauan gempa bumi M 5.0+ live dari BMKG |
+| `http://127.0.0.1:8000/petadua/` | Peta Jabodetabek | Poligon wilayah Jabodetabek |
+| `http://127.0.0.1:8000/petasatu/` | Peta Dasar | Peta navigasi dasar Indonesia |
